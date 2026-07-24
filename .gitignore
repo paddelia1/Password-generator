@@ -1,6 +1,10 @@
-# --- Scripts containing plaintext passwords / API keys: never publish ---
+# --- Private values: never commit ---
+# Real snippet data for MyAutoHotkey.ahk. Track secrets.example.ini instead.
+secrets.ini
+
+# Superseded duplicates that still contain plaintext passwords.
+# Safe to delete once MyAutoHotkey.ahk + secrets.ini is proven out.
 AHKKey.ahk
-MyAutoHotkey.ahk
 test.ahk
 
 # Compiled output

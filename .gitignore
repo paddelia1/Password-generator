@@ -1,0 +1,10 @@
+# --- Scripts containing plaintext passwords / API keys: never publish ---
+AHKKey.ahk
+MyAutoHotkey.ahk
+test.ahk
+
+# Compiled output
+*.exe
+
+# Vendored third-party compiler (Ahk2Exe 1.1.37)
+Ahk2Exe_v2/

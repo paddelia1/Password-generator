@@ -2,11 +2,6 @@
 # Real snippet data for MyAutoHotkey.ahk. Track secrets.example.ini instead.
 secrets.ini
 
-# Superseded duplicates that still contain plaintext passwords.
-# Safe to delete once MyAutoHotkey.ahk + secrets.ini is proven out.
-AHKKey.ahk
-test.ahk
-
 # Compiled output
 *.exe
 

@@ -1,1 +1,9 @@
+# --- Private values: never commit ---
+# Real snippet data for MyAutoHotkey.ahk. Track secrets.example.ini instead.
+secrets.ini
+
+# Local word list used by PasswordGenerator.
 /PasswordGenerator.words.txt
+
+# Vendored third-party compiler (Ahk2Exe 1.1.37)
+Ahk2Exe_v2/

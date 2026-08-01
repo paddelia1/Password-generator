@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Password Generator</title>
+<title>Password generator (Free to use)</title>
 <meta name="theme-color" content="#14171C">
 <meta name="description" content="Generate strong passwords and passphrases, entirely on-device.">
 <link rel="manifest" href="./manifest.json">
@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Password Generator">
+<meta name="apple-mobile-web-app-title" content="Password generator (Free to use)">
 
 <style>
   :root{
@@ -391,13 +391,25 @@
     font-size:11px;
     letter-spacing:0.03em;
   }
+
+  .app-title{
+    margin:2px 0 12px;
+    text-align:center;
+    color:var(--text);
+    font-family:var(--font-display);
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:0.02em;
+  }
 </style>
 </head>
 <body>
 
 <div class="app">
 
-  <header></header>
+  <header>
+    <div class="app-title">Password generator (Free to use)</div>
+  </header>
 
   <div class="mode-switch" id="modeSwitch" data-mode="password">
     <div class="thumb"></div>

@@ -1,5 +1,5 @@
-// Tumbler - offline app-shell cache
-const CACHE = "tumbler-v1";
+// Offline app-shell cache
+const CACHE = "passgen-v2";
 const ASSETS = [
   "./",
   "./index.html",

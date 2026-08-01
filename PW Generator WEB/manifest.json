@@ -1,6 +1,6 @@
 {
-  "name": "Tumbler — Password Generator",
-  "short_name": "Tumbler",
+  "name": "Password Generator",
+  "short_name": "PassGen",
   "description": "Generate strong passwords and passphrases, entirely on-device.",
   "start_url": "./index.html",
   "scope": "./",

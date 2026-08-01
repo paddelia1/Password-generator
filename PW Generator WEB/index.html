@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tumbler — Password Generator</title>
+<meta name="theme-color" content="#14171C">
+<meta name="description" content="Generate strong passwords and passphrases, entirely on-device.">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tumbler">
+
+<style>
+  :root{
+    --bg:#14171C;
+    --surface:#1B2028;
+    --surface-2:#232A34;
+    --border:#2E3642;
+    --accent:#C89B3C;
+    --accent-dim:#8A6F2C;
+    --accent-soft:rgba(200,155,60,0.14);
+    --text:#EDEFF2;
+    --text-muted:#8B93A1;
+    --text-faint:#5B6472;
+    --weak:#E2574C;
+    --fair:#E2A63C;
+    --strong:#4CAF7D;
+    --vstrong:#34C88A;
+    --radius:14px;
+    --font-display: ui-sans-serif, "Segoe UI", Roboto, system-ui, sans-serif;
+    --font-body: ui-sans-serif, "Segoe UI", Roboto, system-ui, sans-serif;
+    --font-mono: ui-monospace, "Roboto Mono", "SFMono-Regular", Consolas, monospace;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(200,155,60,0.08), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    padding:24px 18px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  /* ---------- Header ---------- */
+  header{ padding:6px 2px 22px; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand svg{ width:30px; height:30px; flex:none; }
+  .brand h1{
+    font-family:var(--font-display);
+    font-size:20px;
+    font-weight:800;
+    letter-spacing:0.02em;
+    margin:0;
+  }
+  .brand p{
+    margin:2px 0 0;
+    font-size:12.5px;
+    color:var(--text-muted);
+    letter-spacing:0.03em;
+  }
+
+  /* ---------- Segmented mode switch ---------- */
+  .mode-switch{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:4px;
+    margin:18px 0 22px;
+  }
+  .mode-switch .thumb{
+    position:absolute;
+    top:4px; bottom:4px; left:4px;
+    width:calc(50% - 4px);
+    background:var(--accent);
+    border-radius:999px;
+    transition:transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  .mode-switch[data-mode="passphrase"] .thumb{ transform:translateX(100%); }
+  .mode-switch button{
+    position:relative;
+    z-index:1;
+    border:0;
+    background:transparent;
+    padding:10px 0;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:13.5px;
+    letter-spacing:0.02em;
+    color:var(--text-muted);
+    transition:color .2s;
+  }
+  .mode-switch button.active{ color:#14171C; }
+
+  /* ---------- Cards / sections ---------- */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:14px;
+  }
+  .card h2{
+    font-family:var(--font-display);
+    font-size:11.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.09em;
+    color:var(--text-faint);
+    margin:0 0 16px;
+  }
+
+  .row{ margin-bottom:18px; }
+  .row:last-child{ margin-bottom:0; }
+  .row-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:13.5px;
+    color:var(--text-muted);
+    margin-bottom:10px;
+  }
+  .row-label b{ color:var(--text); font-weight:600; font-family:var(--font-mono); font-size:13px;}
+
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:34px;
+    background:transparent;
+  }
+  input[type="range"]::-webkit-slider-runnable-track{
+    height:5px;
+    background:var(--surface-2);
+    border-radius:99px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    margin-top:-9px;
+    width:23px; height:23px;
+    border-radius:50%;
+    background:var(--accent);
+    border:3px solid var(--bg);
+    box-shadow:0 0 0 1px var(--accent);
+  }
+  input[type="range"]::-moz-range-track{
+    height:5px;
+    background:var(--surface-2);
+    border-radius:99px;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:20px; height:20px;
+    border-radius:50%;
+    background:var(--accent);
+    border:3px solid var(--bg);
+  }
+
+  select.field{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:14px;
+    padding:11px 12px;
+    border-radius:10px;
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+    background-position:calc(100% - 20px) center, calc(100% - 15px) center;
+    background-size:5px 5px, 5px 5px;
+    background-repeat:no-repeat;
+  }
+
+  /* chip-style toggles */
+  .chips{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+  }
+  .chip{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:11px 12px;
+    font-size:13px;
+    color:var(--text-muted);
+    cursor:pointer;
+    user-select:none;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .chip.full{ grid-column:1 / -1; }
+  .chip .box{
+    width:17px; height:17px;
+    border-radius:5px;
+    border:1.5px solid var(--text-faint);
+    flex:none;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .15s, border-color .15s;
+  }
+  .chip .box svg{ width:11px; height:11px; opacity:0; transition:opacity .1s; }
+  .chip.checked{ color:var(--text); border-color:var(--accent-dim); background:var(--accent-soft); }
+  .chip.checked .box{ background:var(--accent); border-color:var(--accent); }
+  .chip.checked .box svg{ opacity:1; }
+  .chip input{ display:none; }
+
+  .link-btn{
+    width:100%;
+    text-align:left;
+    background:var(--surface-2);
+    border:1px dashed var(--border);
+    color:var(--text-muted);
+    font-size:13px;
+    padding:12px 14px;
+    border-radius:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .link-btn b{ color:var(--text); font-weight:600; }
+  .link-btn span.chev{ color:var(--text-faint); font-family:var(--font-mono); }
+
+  /* ---------- Output ---------- */
+  .output-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:14px;
+  }
+  .output-display{
+    background:#0F1216;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px 14px;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,0.4);
+    margin-bottom:16px;
+    min-height:34px;
+    display:flex;
+    align-items:center;
+  }
+  #output{
+    font-family:var(--font-mono);
+    font-size:17px;
+    letter-spacing:0.02em;
+    color:var(--accent);
+    word-break:break-all;
+    line-height:1.5;
+  }
+
+  /* Tumbler strength meter — signature element */
+  .tumbler-meter{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    height:34px;
+    margin-bottom:10px;
+  }
+  .tumbler-meter .pin{
+    flex:1;
+    background:var(--surface-2);
+    border-radius:3px 3px 1px 1px;
+    height:22%;
+    transition:height .35s cubic-bezier(.4,0,.2,1), background .35s;
+  }
+  .strength-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:12.5px;
+  }
+  .strength-row .label{ font-weight:700; letter-spacing:0.02em; }
+  .strength-row .bits{ color:var(--text-faint); font-family:var(--font-mono); }
+
+  /* ---------- Sticky action bar ---------- */
+  .actions{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    display:flex;
+    gap:10px;
+    padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, var(--bg) 60%, transparent);
+  }
+  .actions .wrap{
+    max-width:480px;
+    margin:0 auto;
+    width:100%;
+    display:flex;
+    gap:10px;
+  }
+  .btn{
+    flex:1;
+    border:0;
+    border-radius:12px;
+    padding:15px 0;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:14.5px;
+    letter-spacing:0.02em;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-primary{ background:var(--accent); color:#14171C; }
+  .btn-primary:active{ background:#B58C34; }
+  .btn-secondary{ background:var(--surface-2); color:var(--text); border:1px solid var(--border); }
+  .btn-secondary:active{ background:var(--surface); }
+  .btn svg{ width:16px; height:16px; }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(10,12,15,0.72);
+    backdrop-filter:blur(2px);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:20;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal{
+    width:100%;
+    max-width:480px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px 20px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:82dvh;
+    display:flex;
+    flex-direction:column;
+  }
+  .modal h3{
+    font-family:var(--font-display);
+    font-size:16px;
+    margin:0 0 4px;
+  }
+  .modal p.hint{
+    font-size:12.5px;
+    color:var(--text-muted);
+    margin:0 0 14px;
+  }
+  .modal textarea{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:13.5px;
+    padding:12px;
+    min-height:180px;
+    resize:vertical;
+    width:100%;
+    flex:1;
+  }
+  .modal .tip{
+    font-size:11.5px;
+    color:var(--text-faint);
+    margin:10px 0 16px;
+  }
+  .modal .row-btns{ display:flex; gap:10px; }
+
+  .hidden{ display:none !important; }
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:96px;
+    transform:translate(-50%, 10px);
+    background:var(--accent);
+    color:#14171C;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:999px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s, transform .2s;
+    z-index:30;
+    white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none">
+        <rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="#0F1216" stroke="#2E3642"/>
+        <rect x="5.2" y="13" width="2.4" height="6.5" rx="1" fill="#8A6F2C"/>
+        <rect x="8.6" y="9.5" width="2.4" height="10" rx="1" fill="#C89B3C"/>
+        <rect x="12" y="7" width="2.4" height="12.5" rx="1" fill="#C89B3C"/>
+        <rect x="15.4" y="10.8" width="2.4" height="8.7" rx="1" fill="#C89B3C"/>
+        <rect x="18.8" y="14.6" width="2.4" height="4.9" rx="1" fill="#8A6F2C"/>
+      </svg>
+      <div>
+        <h1>Tumbler</h1>
+        <p>password &amp; passphrase generator</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="mode-switch" id="modeSwitch" data-mode="password">
+    <div class="thumb"></div>
+    <button id="tabPassword" class="active" type="button">Password</button>
+    <button id="tabPassphrase" type="button">Passphrase</button>
+  </div>
+
+  <!-- ============= PASSWORD PANEL ============= -->
+  <div id="panelPassword">
+    <div class="card">
+      <h2>Length</h2>
+      <div class="row">
+        <div class="row-label"><span>Characters</span><b id="lenValue">16</b></div>
+        <input type="range" id="lenSlider" min="4" max="128" value="16">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Character types</h2>
+      <div class="chips">
+        <label class="chip checked" data-cb="useUpper">
+          <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <input type="checkbox" checked>Uppercase A–Z
+        </label>
+        <label class="chip checked" data-cb="useLower">
+          <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <input type="checkbox" checked>Lowercase a–z
+        </label>
+        <label class="chip checked" data-cb="useDigit">
+          <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <input type="checkbox" checked>Digits 0–9
+        </label>
+        <label class="chip checked" data-cb="useSym">
+          <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <input type="checkbox" checked>Symbols !@#$
+        </label>
+        <label class="chip full" data-cb="noAmbiguous">
+          <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <input type="checkbox">Avoid ambiguous characters (O 0 l 1 I |)
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= PASSPHRASE PANEL ============= -->
+  <div id="panelPassphrase" class="hidden">
+    <div class="card">
+      <h2>Words</h2>
+      <div class="row">
+        <div class="row-label"><span>Number of words</span><b id="wordsValue">4</b></div>
+        <input type="range" id="wordsSlider" min="3" max="10" value="4">
+      </div>
+      <div class="row">
+        <div class="row-label"><span>Separator</span></div>
+        <select class="field" id="sepSelect">
+          <option value="-">- (hyphen)</option>
+          <option value=".">. (dot)</option>
+          <option value="_">_ (underscore)</option>
+          <option value=" ">space</option>
+          <option value="">(none)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Options</h2>
+      <div class="chips">
+        <label class="chip checked" data-cb="capitalize">
+          <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <input type="checkbox" checked>Capitalize each word
+        </label>
+        <label class="chip checked" data-cb="addNumber">
+          <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <input type="checkbox" checked>Append a number
+        </label>
+        <label class="chip full" data-cb="addSpecial">
+          <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <input type="checkbox">Add a special character (word boundary)
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Word list</h2>
+      <button class="link-btn" id="openCustomEditor" type="button">
+        <span>Customize word list <b id="customCountLabel">(0 words)</b></span>
+        <span class="chev">edit ›</span>
+      </button>
+      <label class="chip" data-cb="useCustom" id="useCustomChip" style="margin-top:9px;">
+        <span class="box"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#14171C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <input type="checkbox">Use my word list
+      </label>
+    </div>
+  </div>
+
+  <!-- ============= OUTPUT ============= -->
+  <div class="output-card">
+    <h2 style="font-family:var(--font-display);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text-faint);margin:0 0 12px;">Result</h2>
+    <div class="output-display"><span id="output">—</span></div>
+
+    <div class="tumbler-meter" id="tumblerMeter">
+      <div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div>
+    </div>
+    <div class="strength-row">
+      <span class="label" id="strengthLabel">Strength: —</span>
+      <span class="bits" id="strengthBits"></span>
+    </div>
+  </div>
+
+</div>
+
+<div class="actions">
+  <div class="wrap">
+    <button class="btn btn-secondary" id="btnCopy" type="button">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>
+      Copy
+    </button>
+    <button class="btn btn-primary" id="btnGenerate" type="button">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M21 12a9 9 0 1 1-3-6.7" stroke="#14171C" stroke-width="2" stroke-linecap="round"/><path d="M21 3v6h-6" stroke="#14171C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Generate
+    </button>
+  </div>
+</div>
+
+<!-- Custom word list modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>Customize word list</h3>
+    <p class="hint">One per line, or separated by spaces / commas.</p>
+    <textarea id="customTextarea" placeholder="able&#10;acid&#10;aged&#10;..."></textarea>
+    <p class="tip">Tip: more unique words = stronger passphrases (aim for 20+).</p>
+    <div class="row-btns">
+      <button class="btn btn-secondary" id="btnCancelCustom" type="button">Cancel</button>
+      <button class="btn btn-primary" id="btnSaveCustom" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------------------------------------------------------
+  // Character sets (matches PasswordGenerator.ahk)
+  // ---------------------------------------------------------------
+  const CHARS = {
+    upper:   "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    lower:   "abcdefghijklmnopqrstuvwxyz",
+    digits:  "0123456789",
+    symbols: "!@#$%^&*()-_=+[]{};:,.?"
+  };
+  const AMBIGUOUS = "O0oIl1|\"'`{}[]()/\\;:.,";
+
+  const WORDS = "able,acid,aged,also,area,army,away,baby,back,ball,band,bank,base,bath,bear,beat,been,beer,bell,belt,bend,bird,blow,blue,boat,body,bomb,bone,book,boot,born,boss,both,bowl,bulk,burn,bush,busy,cake,call,calm,came,camp,card,care,case,cash,cast,cell,chat,chef,chip,city,clay,club,coal,coat,code,cold,come,cook,cool,cope,copy,cord,core,corn,cost,crew,crop,cure,dark,data,date,dawn,days,dead,deal,dear,debt,deep,deer,desk,dial,diet,dirt,dish,dock,does,dome,done,door,dose,down,draw,drew,drop,drug,drum,dual,duck,dust,duty,each,earn,ease,east,easy,edge,else,euro,even,ever,evil,exam,exit,face,fact,fade,fail,fair,fall,farm,fast,fate,fear,feat,feed,feel,feet,fell,felt,file,fill,film,find,fine,fire,firm,fish,fist,five,flag,flat,flee,flew,flip,flow,foam,fold,folk,food,fool,foot,ford,form,fort,four,free,frog,fuel,full,fund,gain,gale,game,gang,gate,gave,gear,gene,gift,girl,give,glad,glow,glue,goal,goat,goes,gold,golf,gone,good,gray,grew,grid,grim,grin,grip,grow,gulf,hair,half,hall,hand,hang,hard,harm,hate,have,hawk,head,heal,heap,hear,heat,held,hell,helm,help,herb,herd,here,hero,hide,high,hill,hint,hire,hold,hole,holy,home,hood,hook,hope,horn,host,hour,huge,hunt,hurt,icon,idea,idle,inch,into,iron,item,jack,jade,jail,jazz,join,joke,jump,jury,just,keen,keep,kept,kick,kind,king,kiss,kite,knee,knew,knot,know,lace,lack,lady,laid,lake,lamb,lamp,land,lane,last,late,lawn,lazy,lead,leaf,lean,leap,left,lend,lens,less,life,lift,like,limb,lime,line,link,lion,list,live,load,loan,lock,logo,lone,long,look,loop,lord,lose,loss,lost,loud,love,luck,lump,lung,made,mail,main,make,male,mall,many,maps,mark,mart,mask,mass,mast,mate,math,maze,meal,mean,meat,meet,melt,menu,mere,mesh,mild,mile,milk,mill,mind,mine,mint,miss,mist,mode,mold,mole,monk,mood,moon,more,moss,most,moth,move,much,mule,must,mute,myth,nail,name,navy,near,neat,neck,need,nest,news,next,nice,node,none,noon,norm,nose,note,noun,null,numb,oath,obey,okay,once,only,onto,open,oral,oval,oven,over,pace,pack,pact,page,paid,pain,pair,pale,palm,park,part,pass,past,path,peak,pear,peer,pick,pier,pile,pill,pine,pink,pipe,plan,play,plot,plug,plum,plus,poem,poet,pole,poll,pond,pony,pool,poor,pope,pork,port,pose,post,pour,pray,prep,prey,prom,pull,pump,punk,pure,push,quiz,race,rack,rage,raid,rail,rain,rake,ramp,rank,rare,rate,read,real,rear,reef,rely,rent,rest,rice,rich,ride,ring,riot,ripe,rise,risk,road,roar,robe,rock,role,roll,roof,room,root,rope,rose,ruby,rude,rule,rush,rust,sack,safe,sage,said,sail,sake,sale,salt,same,sand,sang,save,scan,seal,seat,seed,seek,seem,seen,self,sell,semi,send,sent,ship,shop,shot,show,shut,sick,side,sigh,sign,silk,sing,sink,site,size,skin,skip,slab,slam,slap,sled,slid,slim,slip,slot,slow,slug,snap,snow,soap,soar,sock,soft,soil,sold,sole,solo,some,song,soon,sort,soul,soup,sour,span,spin,spot,spun,spur,star,stay,stem,step,stir,stop,stow,such,suit,sung,sunk,sure,surf,swam,swan,swap,sway,swim,tail,take,tale,talk,tall,tank,tape,task,taxi,team,tear,tech,teen,tell,tend,tent,term,test,text,than,that,thaw,them,then,they,thin,this,thus,tide,tidy,tied,tier,tile,till,tilt,time,tiny,tips,tire,toad,toll,tomb,tone,tool,torn,tour,town,toys,trap,tray,tree,trek,trim,trio,trip,true,tube,tuna,tune,turn,twin,type,ugly,undo,unit,upon,urge,used,user,vary,vast,verb,very,vest,veto,vibe,view,vine,visa,void,vote,wade,wage,wait,wake,walk,wall,wand,want,ward,ware,warm,warn,warp,wash,wave,wavy,ways,weak,wear,weed,week,weep,well,went,were,west,what,when,whip,whom,wide,wife,wild,will,wind,wine,wing,wink,wipe,wire,wise,wish,wolf,wood,wool,word,wore,work,worm,worn,wrap,wren,yard,yarn,yawn,year,yell,yoga,yolk,your,zeal,zero,zone,zoom".split(",");
+
+  // ---------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------
+  const state = {
+    mode: "password",
+    len: 16,
+    useUpper: true, useLower: true, useDigit: true, useSym: true, noAmbiguous: false,
+    wordCount: 4, sep: "-", capitalize: true, addNumber: true, addSpecial: false,
+    useCustom: false
+  };
+
+  // Custom word list persistence: try localStorage, fall back to in-memory
+  // (keeps the app usable even in contexts where storage is blocked).
+  let memStore = null;
+  function loadCustomWords(){
+    try {
+      const raw = localStorage.getItem("tumbler.customWords");
+      return raw ? JSON.parse(raw) : [];
+    } catch(e){
+      return memStore || [];
+    }
+  }
+  function saveCustomWords(list){
+    try { localStorage.setItem("tumbler.customWords", JSON.stringify(list)); }
+    catch(e){ memStore = list; }
+  }
+  let customWords = loadCustomWords();
+
+  // ---------------------------------------------------------------
+  // Secure random helpers (Web Crypto instead of Math.random)
+  // ---------------------------------------------------------------
+  function randInt(minIncl, maxIncl){
+    const range = maxIncl - minIncl + 1;
+    const buf = new Uint32Array(1);
+    const limit = Math.floor(0xFFFFFFFF / range) * range;
+    let x;
+    do { crypto.getRandomValues(buf); x = buf[0]; } while (x >= limit);
+    return minIncl + (x % range);
+  }
+  function randChar(str){ return str[randInt(0, str.length - 1)]; }
+
+  function shuffle(str){
+    const arr = str.split("");
+    for (let i = arr.length - 1; i > 0; i--){
+      const j = randInt(0, i);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.join("");
+  }
+
+  function stripAmbiguous(set){
+    return set.split("").filter(c => !AMBIGUOUS.includes(c)).join("");
+  }
+
+  // ---------------------------------------------------------------
+  // Generation logic (mirrors PasswordGenerator.ahk v1.0.5)
+  // ---------------------------------------------------------------
+  function activeWordList(){
+    return (state.useCustom && customWords.length >= 2) ? customWords : WORDS;
+  }
+
+  function generatePassword(){
+    let pool = "";
+    const required = [];
+    function addSet(key, enabled){
+      if (!enabled) return;
+      let set = CHARS[key];
+      if (state.noAmbiguous) set = stripAmbiguous(set);
+      if (set === "") return;
+      pool += set;
+      required.push(randChar(set));
+    }
+    addSet("upper", state.useUpper);
+    addSet("lower", state.useLower);
+    addSet("digits", state.useDigit);
+    addSet("symbols", state.useSym);
+
+    if (pool === "") return "(select at least one character type)";
+
+    let len = state.len;
+    if (len < required.length) len = required.length;
+
+    let pw = required.join("");
+    for (let i = 0; i < len - required.length; i++) pw += randChar(pool);
+
+    return shuffle(pw);
+  }
+
+  function generatePassphrase(){
+    const list = activeWordList();
+    const wantCount = state.wordCount;
+
+    // Draw without replacement; refill the pool if it runs out
+    // (e.g. a short custom list), so generation never fails.
+    let pool = list.slice();
+    const picked = [];
+    for (let i = 0; i < wantCount; i++){
+      if (pool.length === 0) pool = list.slice();
+      const idx = randInt(0, pool.length - 1);
+      let w = pool[idx];
+      pool.splice(idx, 1);
+      if (state.capitalize) w = w.charAt(0).toUpperCase() + w.slice(1);
+      picked.push(w);
+    }
+
+    // Segments = words (+ optional number). The special character, if
+    // enabled, is inserted as its own segment so it only ever lands at
+    // a word/number boundary — never inside a word.
+    const segments = picked.slice();
+    if (state.addNumber) segments.push(String(randInt(10, 99)));
+    if (state.addSpecial){
+      const sym = randChar(CHARS.symbols);
+      const insertPos = randInt(0, segments.length);
+      segments.splice(insertPos, 0, sym);
+    }
+
+    return segments.join(state.sep);
+  }
+
+  // ---------------------------------------------------------------
+  // Entropy estimate (matches AHK's k*log2(N) approximation)
+  // ---------------------------------------------------------------
+  function computeBits(result){
+    if (state.mode === "passphrase"){
+      let bits = state.wordCount * (Math.log(activeWordList().length) / Math.LN2);
+      if (state.addNumber) bits += Math.log(90) / Math.LN2;
+      if (state.addSpecial){
+        const boundaryCount = state.wordCount + (state.addNumber ? 1 : 0) + 1;
+        bits += Math.log(CHARS.symbols.length * boundaryCount) / Math.LN2;
+      }
+      return bits;
+    } else {
+      let poolSize = 0;
+      if (/[a-z]/.test(result)) poolSize += 26;
+      if (/[A-Z]/.test(result)) poolSize += 26;
+      if (/[0-9]/.test(result)) poolSize += 10;
+      if (/[^a-zA-Z0-9]/.test(result)) poolSize += 22;
+      return result.length * (Math.log(poolSize) / Math.LN2);
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // UI wiring
+  // ---------------------------------------------------------------
+  const $ = (id) => document.getElementById(id);
+  const outputEl = $("output");
+  const strengthLabel = $("strengthLabel");
+  const strengthBits = $("strengthBits");
+  const pins = document.querySelectorAll("#tumblerMeter .pin");
+
+  function generateResult(){
+    const result = state.mode === "password" ? generatePassword() : generatePassphrase();
+    outputEl.textContent = result;
+    updateStrength(result);
+  }
+
+  function updateStrength(result){
+    if (!result || result.charAt(0) === "("){
+      strengthLabel.textContent = "Strength: —";
+      strengthLabel.style.color = "var(--text-muted)";
+      strengthBits.textContent = "";
+      pins.forEach(p => { p.style.height = "8%"; p.style.background = "var(--surface-2)"; });
+      return;
+    }
+
+    const bits = Math.round(computeBits(result));
+    let label, color;
+    if (bits < 45)      { label = "Weak";        color = "var(--weak)"; }
+    else if (bits < 70) { label = "Fair";         color = "var(--fair)"; }
+    else if (bits < 100){ label = "Strong";       color = "var(--strong)"; }
+    else                { label = "Very strong";  color = "var(--vstrong)"; }
+
+    strengthLabel.textContent = "Strength: " + label;
+    strengthLabel.style.color = color;
+    strengthBits.textContent = "~" + bits + " bits of entropy";
+
+    // Tumbler meter: 5 pins, filled progressively across a 0-140 bit scale
+    const norm = Math.max(0, Math.min(1, bits / 140));
+    const filled = norm * 5;
+    pins.forEach((p, i) => {
+      const local = Math.max(0, Math.min(1, filled - i));
+      const h = 8 + local * 92;
+      p.style.height = h + "%";
+      p.style.background = local > 0 ? color : "var(--surface-2)";
+    });
+  }
+
+  // Mode switch
+  const modeSwitch = $("modeSwitch");
+  const tabPassword = $("tabPassword");
+  const tabPassphrase = $("tabPassphrase");
+  const panelPassword = $("panelPassword");
+  const panelPassphrase = $("panelPassphrase");
+
+  function setMode(mode){
+    state.mode = mode;
+    modeSwitch.dataset.mode = mode;
+    tabPassword.classList.toggle("active", mode === "password");
+    tabPassphrase.classList.toggle("active", mode === "passphrase");
+    panelPassword.classList.toggle("hidden", mode !== "password");
+    panelPassphrase.classList.toggle("hidden", mode !== "passphrase");
+    generateResult();
+  }
+  tabPassword.addEventListener("click", () => setMode("password"));
+  tabPassphrase.addEventListener("click", () => setMode("passphrase"));
+
+  // Length slider
+  const lenSlider = $("lenSlider");
+  const lenValue = $("lenValue");
+  lenSlider.addEventListener("input", () => {
+    state.len = Number(lenSlider.value);
+    lenValue.textContent = state.len;
+    generateResult();
+  });
+
+  // Word count slider
+  const wordsSlider = $("wordsSlider");
+  const wordsValue = $("wordsValue");
+  wordsSlider.addEventListener("input", () => {
+    state.wordCount = Number(wordsSlider.value);
+    wordsValue.textContent = state.wordCount;
+    generateResult();
+  });
+
+  // Separator
+  $("sepSelect").addEventListener("change", (e) => {
+    state.sep = e.target.value;
+    generateResult();
+  });
+
+  // Chip checkboxes (generic wiring via data-cb)
+  document.querySelectorAll(".chip[data-cb]").forEach(chip => {
+    const key = chip.dataset.cb;
+    const input = chip.querySelector("input");
+    input.addEventListener("change", () => {
+      state[key] = input.checked;
+      chip.classList.toggle("checked", input.checked);
+      generateResult();
+    });
+  });
+
+  // Generate / Copy
+  $("btnGenerate").addEventListener("click", generateResult);
+
+  const toast = $("toast");
+  let toastTimer = null;
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1200);
+  }
+  $("btnCopy").addEventListener("click", async () => {
+    const text = outputEl.textContent;
+    if (!text || text === "—" || text.charAt(0) === "(") return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch(e2){}
+      document.body.removeChild(ta);
+    }
+    showToast("Copied!");
+  });
+
+  // ---------------------------------------------------------------
+  // Custom word list modal
+  // ---------------------------------------------------------------
+  const modalBackdrop = $("modalBackdrop");
+  const customTextarea = $("customTextarea");
+  const customCountLabel = $("customCountLabel");
+  const useCustomChip = $("useCustomChip");
+  const useCustomInput = useCustomChip.querySelector("input");
+
+  function parseWords(text){
+    const seen = new Set();
+    const result = [];
+    text.split(/[\s,;]+/).forEach(tok => {
+      const w = tok.trim();
+      if (w !== "" && !seen.has(w.toLowerCase())){
+        seen.add(w.toLowerCase());
+        result.push(w);
+      }
+    });
+    return result;
+  }
+
+  function updateCustomUI(){
+    const n = customWords.length;
+    customCountLabel.textContent = "(" + n + " word" + (n === 1 ? "" : "s") + ")";
+    useCustomChip.style.opacity = n >= 2 ? "1" : "0.5";
+    useCustomChip.style.pointerEvents = n >= 2 ? "auto" : "none";
+    if (n < 2){
+      state.useCustom = false;
+      useCustomInput.checked = false;
+      useCustomChip.classList.remove("checked");
+    }
+  }
+
+  $("openCustomEditor").addEventListener("click", () => {
+    customTextarea.value = customWords.join("\n");
+    modalBackdrop.classList.add("open");
+  });
+  $("btnCancelCustom").addEventListener("click", () => modalBackdrop.classList.remove("open"));
+  modalBackdrop.addEventListener("click", (e) => { if (e.target === modalBackdrop) modalBackdrop.classList.remove("open"); });
+
+  $("btnSaveCustom").addEventListener("click", () => {
+    const words = parseWords(customTextarea.value);
+    if (words.length < 2){
+      showToast("Enter at least 2 words");
+      return;
+    }
+    customWords = words;
+    saveCustomWords(customWords);
+    updateCustomUI();
+    state.useCustom = true;
+    useCustomInput.checked = true;
+    useCustomChip.classList.add("checked");
+    modalBackdrop.classList.remove("open");
+    generateResult();
+  });
+
+  // ---------------------------------------------------------------
+  // Launch
+  // ---------------------------------------------------------------
+  updateCustomUI();
+  generateResult();
+
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
